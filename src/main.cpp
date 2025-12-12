@@ -18,9 +18,8 @@ int main()
     // PARÁMETRO GLOBAL DE COLOR
     sf::Color colorColumnasGlobal = sf::Color::White;
 
-    sf::RenderWindow window(sf::VideoMode(1920, 1080), "SPIKES!", sf::Style::Fullscreen);
+    sf::RenderWindow window(sf::VideoMode(1920, 1080), "SPIKES!", sf::Style::None);
     window.setFramerateLimit(60);
-
     sf::View view(sf::FloatRect(0, 0, 800, 600));
     window.setView(view);
 
@@ -76,19 +75,22 @@ int main()
     if (uiLoaded)
     {
         configurarSpriteUI(spriteLogo, texLogo, 400, 150);
+        spriteLogo.setScale(0.6f, 0.6f);
+
         configurarSpriteUI(spriteBtnJugar, texBtnJugar, 400, 300);
-        spriteBtnJugar.setScale(0.5f, 0.5f);
+        spriteBtnJugar.setScale(0.65f, 0.65f);
 
         configurarSpriteUI(spriteBtnSalir, texBtnSalir, 400, 420);
-        spriteBtnSalir.setScale(0.5f, 0.5f);
+        spriteBtnSalir.setScale(0.3f, 0.3f);
 
         configurarSpriteUI(spriteGameOver, texGameOver, 400, 150);
+        spriteGameOver.setScale(0.45f, 0.45f);
 
         configurarSpriteUI(spriteBtnReintentar, texBtnReintentar, 400, 350);
-        spriteBtnReintentar.setScale(0.6f, 0.6f);
+        spriteBtnReintentar.setScale(0.35f, 0.35f);
 
         configurarSpriteUI(spriteBtnMenu, texBtnMenu, 400, 470);
-        spriteBtnMenu.setScale(0.6f, 0.6f);
+        spriteBtnMenu.setScale(0.5f, 0.5f);
     }
 
     // --- TEXTURAS JUEGO ---
