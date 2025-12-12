@@ -6,80 +6,17 @@
 #include <iostream>
 #include <string>
 
-// --- DEFINICIÓN DE ESTADOS ---
-enum EstadoJuego
-{
-    MENU,
-    JUGANDO,
-    GAMEOVER
-};
-
-// Estructura de obstáculo
-struct Obstaculo
-{
-    sf::RectangleShape rectTop;
-    sf::ConvexShape spikeTop;
-    sf::Sprite spriteSpikeTop;
-
-    sf::RectangleShape rectBottom;
-    sf::ConvexShape spikeBottom;
-    sf::Sprite spriteSpikeBottom;
-
-    bool contado = false;
-    int multiplicador = 1;
-};
-
-// Función auxiliar Hitbox Pincho
-sf::ConvexShape crearHitboxPincho(float anchoBase, float alturaPunta, bool apuntaHaciaArriba)
-{
-    sf::ConvexShape pincho;
-    pincho.setPointCount(3);
-    if (apuntaHaciaArriba)
-    {
-        pincho.setPoint(0, sf::Vector2f(0, alturaPunta));
-        pincho.setPoint(1, sf::Vector2f(anchoBase, alturaPunta));
-        pincho.setPoint(2, sf::Vector2f(anchoBase / 2, 0));
-    }
-    else
-    {
-        pincho.setPoint(0, sf::Vector2f(0, 0));
-        pincho.setPoint(1, sf::Vector2f(anchoBase, 0));
-        pincho.setPoint(2, sf::Vector2f(anchoBase / 2, alturaPunta));
-    }
-    pincho.setFillColor(sf::Color(255, 0, 0, 0)); // Invisible
-    return pincho;
-}
-
-// Función auxiliar para configurar texto
-void configurarTexto(sf::Text &texto, sf::Font &fuente, std::string mensaje, int tamano, sf::Color color, float x, float y)
-{
-    texto.setFont(fuente);
-    texto.setString(mensaje);
-    texto.setCharacterSize(tamano);
-    texto.setFillColor(color);
-    sf::FloatRect bounds = texto.getLocalBounds();
-    texto.setOrigin(bounds.width / 2.0f, bounds.height / 2.0f);
-    texto.setPosition(x, y);
-}
-
-// Función auxiliar para configurar Sprites de UI
-void configurarSpriteUI(sf::Sprite &sprite, sf::Texture &texture, float x, float y)
-{
-    sprite.setTexture(texture);
-    sf::Vector2u tam = texture.getSize();
-    sprite.setOrigin(tam.x / 2.0f, tam.y / 2.0f);
-    sprite.setPosition(x, y);
-}
+// --- NUESTRAS CABECERAS MODULARES ---
+#include "Definitions.hpp"
+#include "Obstaculos.hpp"
+#include "Utils.hpp"
 
 int main()
 {
     std::srand(static_cast<unsigned>(std::time(nullptr)));
 
-    // =================================================================================
     // PARÁMETRO GLOBAL DE COLOR
-    // =================================================================================
     sf::Color colorColumnasGlobal = sf::Color::White;
-    // =================================================================================
 
     sf::RenderWindow window(sf::VideoMode(1920, 1080), "SPIKES!", sf::Style::Fullscreen);
     window.setFramerateLimit(60);
@@ -89,11 +26,18 @@ int main()
 
     EstadoJuego estadoActual = MENU;
 
-    // --- RECURSOS ---
+    // --- RECURSOS (FUENTES) ---
     sf::Font font;
-    if (!font.loadFromFile("C:/Windows/Fonts/arial.ttf"))
+
+    // CAMBIO: Ahora cargamos tu fuente personalizada
+    if (!font.loadFromFile("assets/fonts/mifuente.ttf"))
     {
-        std::cout << "Advertencia: Fuente no encontrada." << std::endl;
+        // Si falla (por ejemplo, si te equivocaste de nombre), intentamos cargar Arial como respaldo
+        std::cout << "Advertencia: No se encontro mifuente.ttf, usando Arial." << std::endl;
+        if (!font.loadFromFile("C:/Windows/Fonts/arial.ttf"))
+        {
+            std::cout << "ERROR CRITICO: No se encontro ninguna fuente." << std::endl;
+        }
     }
 
     sf::Text textoScore;
@@ -104,81 +48,74 @@ int main()
     textoScore.setPosition(400, 50);
 
     sf::Text textoAutor;
-    configurarTexto(textoAutor, font, "Aldo Gael Aldaz Rosales - 24310322", 20, sf::Color::White, 400, 550);
+    configurarTexto(textoAutor, font, "ALDO GAEL ALDAZ ROSALES  24310322", 20, sf::Color::White, 400, 550);
 
     sf::Text textoScoreFinal;
 
-    // TEXTURAS UI
+    // --- TEXTURAS UI ---
     sf::Texture texLogo, texBtnJugar, texBtnSalir, texBtnReintentar, texBtnMenu, texGameOver;
     bool uiLoaded = true;
 
-    if (!texLogo.loadFromFile("assets/logo.png"))
+    if (!texLogo.loadFromFile("assets/images/logo.png"))
         uiLoaded = false;
-    if (!texBtnJugar.loadFromFile("assets/btn_jugar.png"))
+    if (!texBtnJugar.loadFromFile("assets/images/btn_jugar.png"))
         uiLoaded = false;
-    if (!texBtnSalir.loadFromFile("assets/btn_salir.png"))
+    if (!texBtnSalir.loadFromFile("assets/images/btn_salir.png"))
         uiLoaded = false;
-    if (!texBtnReintentar.loadFromFile("assets/btn_reintentar.png"))
+    if (!texBtnReintentar.loadFromFile("assets/images/btn_reintentar.png"))
         uiLoaded = false;
-    if (!texBtnMenu.loadFromFile("assets/btn_menu.png"))
+    if (!texBtnMenu.loadFromFile("assets/images/btn_menu.png"))
         uiLoaded = false;
-    if (!texGameOver.loadFromFile("assets/img_game_over.png"))
+    if (!texGameOver.loadFromFile("assets/images/img_game_over.png"))
         uiLoaded = false;
 
     if (!uiLoaded)
-        std::cout << "ERROR: Faltan imagenes de interfaz en assets/" << std::endl;
+        std::cout << "ERROR: Faltan imagenes de interfaz." << std::endl;
 
-    // CONFIGURAR SPRITES DE UI
-    sf::Sprite spriteLogo, spriteBtnJugar, spriteBtnSalir, spriteGameOver, spriteBtnReintentar, spriteBtnMenu;
+    sf::Sprite spriteLogo, spriteBtnJugar, spriteBtnSalir, spriteBtnReintentar, spriteBtnMenu, spriteGameOver;
     if (uiLoaded)
     {
-        // --- MENÚ ---
         configurarSpriteUI(spriteLogo, texLogo, 400, 150);
-        spriteLogo.setScale(0.6f, 0.6f); // <--- NUEVO: Modifica el tamaño del LOGO (0.8 es un ejemplo)
-
         configurarSpriteUI(spriteBtnJugar, texBtnJugar, 400, 300);
-        spriteBtnJugar.setScale(0.57f, 0.57f); // <--- NUEVO: Haz más chicos o grandes los botones
+        spriteBtnJugar.setScale(0.5f, 0.5f);
 
         configurarSpriteUI(spriteBtnSalir, texBtnSalir, 400, 420);
-        spriteBtnSalir.setScale(0.25f, 0.25f); // <--- NUEVO: Aplica lo mismo al botón Salir
+        spriteBtnSalir.setScale(0.5f, 0.5f);
 
-        // --- GAME OVER ---
         configurarSpriteUI(spriteGameOver, texGameOver, 400, 150);
-        spriteGameOver.setScale(0.5f, 0.5f); // <--- NUEVO
 
         configurarSpriteUI(spriteBtnReintentar, texBtnReintentar, 400, 350);
-        spriteBtnReintentar.setScale(0.5f, 0.5f); // <--- NUEVO
+        spriteBtnReintentar.setScale(0.6f, 0.6f);
 
         configurarSpriteUI(spriteBtnMenu, texBtnMenu, 400, 470);
-        spriteBtnMenu.setScale(0.6f, 0.6f); // <--- NUEVO
+        spriteBtnMenu.setScale(0.6f, 0.6f);
     }
 
-    // TEXTURAS JUEGO
+    // --- TEXTURAS JUEGO ---
     sf::Texture texturaNave, texturaMuro, texturaPincho;
-    bool hayNave = texturaNave.loadFromFile("assets/nave.png");
-    bool hayMuro = texturaMuro.loadFromFile("assets/muro.png");
+    bool hayNave = texturaNave.loadFromFile("assets/images/nave.png");
+    bool hayMuro = texturaMuro.loadFromFile("assets/images/muro.png");
     if (hayMuro)
         texturaMuro.setRepeated(true);
-    bool hayPincho = texturaPincho.loadFromFile("assets/pincho.png");
+    bool hayPincho = texturaPincho.loadFromFile("assets/images/pincho.png");
 
     sf::Texture texturaFondoMenu, texturaFondoJuego;
     sf::Sprite spriteFondoMenu, spriteFondoJuego;
-    bool hayFondoMenu = texturaFondoMenu.loadFromFile("assets/fondo_menu.png");
-    if (hayFondoMenu)
+
+    if (texturaFondoMenu.loadFromFile("assets/images/fondo_menu.png"))
     {
         spriteFondoMenu.setTexture(texturaFondoMenu);
         spriteFondoMenu.setScale(800.0f / texturaFondoMenu.getSize().x, 600.0f / texturaFondoMenu.getSize().y);
     }
-    bool hayFondoJuego = texturaFondoJuego.loadFromFile("assets/fondo_juego.png");
-    if (hayFondoJuego)
+    if (texturaFondoJuego.loadFromFile("assets/images/fondo_juego.png"))
     {
         spriteFondoJuego.setTexture(texturaFondoJuego);
         spriteFondoJuego.setScale(800.0f / texturaFondoJuego.getSize().x, 600.0f / texturaFondoJuego.getSize().y);
     }
 
-    // AUDIO
+    // --- AUDIO ---
     sf::Music musicaJuego;
-    bool hayMusicaJuego = musicaJuego.openFromFile("assets/musica.ogg");
+    bool hayMusicaJuego = musicaJuego.openFromFile("assets/music/musica.ogg");
     if (hayMusicaJuego)
     {
         musicaJuego.setLoop(true);
@@ -186,7 +123,7 @@ int main()
     }
 
     sf::Music musicaMenu;
-    bool hayMusicaMenu = musicaMenu.openFromFile("assets/menu.ogg");
+    bool hayMusicaMenu = musicaMenu.openFromFile("assets/music/menu.ogg");
     if (hayMusicaMenu)
     {
         musicaMenu.setLoop(true);
@@ -196,12 +133,12 @@ int main()
 
     sf::SoundBuffer bufferPunto, bufferChoque;
     sf::Sound sonidoPunto, sonidoChoque;
-    if (bufferPunto.loadFromFile("assets/punto.wav"))
+    if (bufferPunto.loadFromFile("assets/music/punto.wav"))
     {
         sonidoPunto.setBuffer(bufferPunto);
         sonidoPunto.setVolume(80.0f);
     }
-    if (bufferChoque.loadFromFile("assets/explosion.wav"))
+    if (bufferChoque.loadFromFile("assets/music/explosion.wav"))
     {
         sonidoChoque.setBuffer(bufferChoque);
         sonidoChoque.setVolume(100.0f);
@@ -335,7 +272,7 @@ int main()
             if (naveHitbox.getPosition().y > 600)
             {
                 estadoActual = GAMEOVER;
-                configurarTexto(textoScoreFinal, font, "Score Final: " + std::to_string(score), 40, sf::Color::White, 400, 250);
+                configurarTexto(textoScoreFinal, font, "SCORE  " + std::to_string(score), 40, sf::Color::White, 400, 250);
                 if (hayMusicaJuego)
                     musicaJuego.stop();
                 sonidoChoque.play();
@@ -382,18 +319,8 @@ int main()
 
                 Obstaculo obs;
                 int anchoColumna = 50;
-
-                // =========================================================================
-                // AJUSTES DE PINCHOS (¡AQUÍ MODIFICAS EL TAMAÑO!)
-                // =========================================================================
-                // 1. Altura (Alto): Qué tan largo es el pico hacia arriba/abajo (antes 30)
                 float alturaPincho = 50.0f;
-
-                // 2. Escala de Ancho (Grosor): Multiplicador visual.
-                // 1.0 = Ancho normal del muro.
-                // 1.3 = 30% más ancho (se verá más grueso y sobresaldrá)
                 float escalaVisualAncho = 1.3f;
-                // =========================================================================
 
                 obs.multiplicador = multiplicadorActual;
 
@@ -421,7 +348,6 @@ int main()
                 else
                     obs.rectBottom.setFillColor(colorColumnasGlobal);
 
-                // PINCHO ARRIBA
                 obs.spikeTop = crearHitboxPincho(anchoColumna, alturaPincho, false);
                 obs.spikeTop.setPosition(850, alturaTunelPosY);
                 if (hayPincho)
@@ -431,11 +357,9 @@ int main()
                     obs.spriteSpikeTop.setOrigin(tP.x / 2.0f, tP.y / 2.0f);
                     obs.spriteSpikeTop.setPosition(850 + anchoColumna / 2.0f, alturaTunelPosY + alturaPincho / 2.0f);
                     obs.spriteSpikeTop.setRotation(180);
-                    // AQUÍ APLICAMOS LA ESCALA VISUAL
                     obs.spriteSpikeTop.setScale((anchoColumna * escalaVisualAncho) / (float)tP.x, alturaPincho / (float)tP.y);
                 }
 
-                // PINCHO ABAJO
                 obs.spikeBottom = crearHitboxPincho(anchoColumna, alturaPincho, true);
                 obs.spikeBottom.setPosition(850, posYInicioAbajo);
                 if (hayPincho)
@@ -445,7 +369,6 @@ int main()
                     obs.spriteSpikeBottom.setOrigin(tP.x / 2.0f, tP.y / 2.0f);
                     obs.spriteSpikeBottom.setPosition(850 + anchoColumna / 2.0f, posYInicioAbajo + alturaPincho / 2.0f);
                     obs.spriteSpikeBottom.setRotation(0);
-                    // AQUÍ APLICAMOS LA ESCALA VISUAL
                     obs.spriteSpikeBottom.setScale((anchoColumna * escalaVisualAncho) / (float)tP.x, alturaPincho / (float)tP.y);
                 }
 
@@ -491,7 +414,7 @@ int main()
                     cajaNave.intersects(obs.spikeBottom.getGlobalBounds()))
                 {
                     estadoActual = GAMEOVER;
-                    configurarTexto(textoScoreFinal, font, "Score Final: " + std::to_string(score), 40, sf::Color::White, 400, 250);
+                    configurarTexto(textoScoreFinal, font, "SCORE   " + std::to_string(score), 40, sf::Color::White, 400, 250);
                     if (hayMusicaJuego)
                         musicaJuego.stop();
                     sonidoChoque.play();
@@ -505,7 +428,7 @@ int main()
 
         if (estadoActual == MENU)
         {
-            if (hayFondoMenu)
+            if (spriteFondoMenu.getTexture())
                 window.draw(spriteFondoMenu);
             if (uiLoaded)
             {
@@ -517,7 +440,7 @@ int main()
         }
         else if (estadoActual == JUGANDO)
         {
-            if (hayFondoJuego)
+            if (spriteFondoJuego.getTexture())
                 window.draw(spriteFondoJuego);
             for (size_t i = 0; i < listaObstaculos.size(); i++)
             {
@@ -542,7 +465,7 @@ int main()
         }
         else if (estadoActual == GAMEOVER)
         {
-            if (hayFondoJuego)
+            if (spriteFondoJuego.getTexture())
                 window.draw(spriteFondoJuego);
 
             if (uiLoaded)

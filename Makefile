@@ -1,20 +1,27 @@
+# Directorios de origen y destino
+SRC_DIR := src
+BIN_DIR := bin
+
+# Librerias (SFML y Audio)
+# Nota: Si usaste Box2D, agrega -lbox2d al final de esta linea
+SFML := -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
+
 # Nombre de tu ejecutable final
-TARGET = bin/SpikesGame.exe
+TARGET := $(BIN_DIR)/SpikesGame.exe
 
-# Compilador y banderas
-CXX = g++
-CXXFLAGS = -Wall -std=c++17 -O2
+# Obtener todos los archivos .cpp en el directorio de origen
+CPP_FILES := $(wildcard $(SRC_DIR)/*.cpp)
 
-# Librerías de SFML (Gráficos, Ventana, Sistema, Audio)
-LIBS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio
-
-# Archivos fuente (busca todos los .cpp dentro de la carpeta src)
-SRC = $(wildcard src/*.cpp)
-
-# Regla principal: Compilar el juego
+# Regla por defecto: Compilar el juego
 all:
-	$(CXX) $(SRC) -o $(TARGET) $(CXXFLAGS) $(LIBS)
+	g++ $(CPP_FILES) -o $(TARGET) $(SFML) -Iinclude
 
-# Regla para limpiar (borrar el ejecutable antiguo)
+# Regla para ejecutar el juego
+run:
+	./$(TARGET)
+
+# Regla para limpiar los archivos generados
 clean:
-	del /Q bin\*.exe
+	rm -f $(BIN_DIR)/*.exe
+
+.PHONY: all run clean
